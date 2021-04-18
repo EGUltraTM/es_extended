@@ -206,7 +206,6 @@ AddEventHandler('esx:updateCoords', function(coords)
 		xPlayer.updateCoords(coords)
 	end
 end)
-end)
 
 RegisterNetEvent('esx:useItem')
 AddEventHandler('esx:useItem', function(source, itemName)
