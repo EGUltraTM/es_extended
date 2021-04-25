@@ -4,50 +4,48 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNetEvent('esx:onPlayerJoined')
-AddEventHandler('esx:onPlayerJoined', function()
-	if not ESX.Players[source] then
-		onPlayerJoined(source)
-	end
+AddEventHandler('esx:onPlayerJoined', function(charID)
+    onPlayerJoined(source, charID)
 end)
 
-function onPlayerJoined(playerId)
-	local identifier
+function onPlayerJoined(playerId, charID)
+    local identifier
 
-	for k,v in ipairs(GetPlayerIdentifiers(playerId)) do
-		if string.match(v, 'license:') then
-			identifier = string.sub(v, 9)
-			break
-		end
-	end
+    for k,v in ipairs(GetPlayerIdentifiers(playerId)) do
+        if string.match(v, 'license:') then
+            identifier = charID..''..v:sub(9)
+            break
+        end
+    end
 
-	if identifier then
-		if ESX.GetPlayerFromIdentifier(identifier) then
-			DropPlayer(playerId, ('there was an error loading your character!\nError code: identifier-active-ingame\n\nThis error is caused by a player on this server who has the same identifier as you have. Make sure you are not playing on the same Rockstar account.\n\nYour Rockstar identifier: %s'):format(identifier))
-		else
-			MySQL.Async.fetchScalar('SELECT 1 FROM users WHERE identifier = @identifier', {
-				['@identifier'] = identifier
-			}, function(result)
-				if result then
-					loadESXPlayer(identifier, playerId)
-				else
-					local accounts = {}
+    if identifier then
+        if ESX.GetPlayerFromIdentifier(identifier) then
+            DropPlayer(playerId, ('there was an error loading your character!\nError code: identifier-active-ingame\n\nThis error is caused by a player on this server who has the same identifier as you have. Make sure you are not playing on the same Rockstar account.\n\nYour Rockstar identifier: %s'):format(identifier))
+        else
+            MySQL.Async.fetchScalar('SELECT 1 FROM users WHERE identifier = @identifier', {
+                ['@identifier'] = identifier
+            }, function(result)
+                if result then
+                    loadESXPlayer(identifier, playerId)
+                else
+                    local accounts = {}
 
-					for account,money in pairs(Config.StartingAccountMoney) do
-						accounts[account] = money
-					end
+                    for account,money in pairs(Config.StartingAccountMoney) do
+                        accounts[account] = money
+                    end
 
-					MySQL.Async.execute('INSERT INTO users (accounts, identifier) VALUES (@accounts, @identifier)', {
-						['@accounts'] = json.encode(accounts),
-						['@identifier'] = identifier
-					}, function(rowsChanged)
-						loadESXPlayer(identifier, playerId)
-					end)
-				end
-			end)
-		end
-	else
-		DropPlayer(playerId, 'there was an error loading your character!\nError code: identifier-missing-ingame\n\nThe cause of this error is not known, your identifier could not be found. Please come back later or report this problem to the server administration team.')
-	end
+                    MySQL.Async.execute('INSERT INTO users (accounts, identifier) VALUES (@accounts, @identifier)', {
+                        ['@accounts'] = json.encode(accounts),
+                        ['@identifier'] = identifier
+                    }, function(rowsChanged)
+                        loadESXPlayer(identifier, playerId)
+                    end)
+                end
+            end)
+        end
+    else
+        DropPlayer(playerId, 'there was an error loading your character!\nError code: identifier-missing-ingame\n\nThe cause of this error is not known, your identifier could not be found. Please come back later or report this problem to the server administration team.')
+    end
 end
 
 AddEventHandler('playerConnecting', function(name, setCallback, deferrals)
@@ -86,7 +84,7 @@ function loadESXPlayer(identifier, playerId)
 	}
 
 	table.insert(tasks, function(cb)
-		MySQL.Async.fetchAll('SELECT accounts, job, job_grade, `group`, position, inventory FROM users WHERE identifier = @identifier', {
+		MySQL.Async.fetchAll('SELECT accounts, job, job_grade, `group`, loadout, position, inventory FROM users WHERE identifier = @identifier', {
 			['@identifier'] = identifier
 		}, function(result)
 			local job, grade, jobObject, gradeObject = result[1].job, tostring(result[1].job_grade)
@@ -162,7 +160,7 @@ function loadESXPlayer(identifier, playerId)
 		ESX.Players[playerId] = xPlayer
 		TriggerEvent('linden_inventory:setPlayerInventory', xPlayer, userData.inventory)
 		TriggerEvent('esx:playerLoaded', playerId, xPlayer)
-
+  
 		xPlayer.triggerEvent('esx:playerLoaded', {
 			accounts = xPlayer.getAccounts(),
 			coords = xPlayer.getCoords(),
@@ -171,7 +169,7 @@ function loadESXPlayer(identifier, playerId)
 			job = xPlayer.getJob(),
 			money = xPlayer.getMoney()
 		})
-
+  
 		xPlayer.triggerEvent('esx:registerSuggestions', ESX.RegisteredCommands)
 		print(('[es_extended] [^2INFO^7] A player with name "%s^7" has connected to the server with assigned player id %s'):format(xPlayer.getName(), playerId))
 	end)
@@ -209,12 +207,12 @@ end)
 
 RegisterNetEvent('esx:useItem')
 AddEventHandler('esx:useItem', function(source, itemName)
-	local xPlayer = ESX.GetPlayerFromId(source)
-	local item = xPlayer.getInventoryItem(itemName)
-	if item.count > 0 then
-		if item.closeonuse then TriggerClientEvent('linden_inventory:closeInventory', source) end
-		ESX.UseItem(source, itemName)
-	end
+  local xPlayer = ESX.GetPlayerFromId(source)
+  local item = xPlayer.getInventoryItem(itemName)
+  if item.count > 0 then
+      if item.closeonuse then TriggerClientEvent('linden_inventory:closeInventory', source) end
+      ESX.UseItem(source, itemName)
+  end
 end)
 
 ESX.RegisterServerCallback('esx:getPlayerData', function(source, cb)

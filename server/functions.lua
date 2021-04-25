@@ -165,7 +165,7 @@ end
 
 ESX.SavePlayer = function(xPlayer, cb)
 	local asyncTasks = {}
-
+  
 	table.insert(asyncTasks, function(cb2)
 		MySQL.Async.execute('UPDATE users SET accounts = @accounts, job = @job, job_grade = @job_grade, `group` = @group, position = @position, inventory = @inventory WHERE identifier = @identifier', {
 			['@accounts'] = json.encode(xPlayer.getAccounts(true)),
@@ -179,15 +179,15 @@ ESX.SavePlayer = function(xPlayer, cb)
 			cb2()
 		end)
 	end)
-
+  
 	Async.parallel(asyncTasks, function(results)
 		print(('[es_extended] [^2INFO^7] Saved player "%s^7"'):format(xPlayer.getName()))
-
+  
 		if cb then
 			cb()
 		end
 	end)
-end
+  end
 
 ESX.SavePlayers = function(cb)
 	local xPlayers, asyncTasks = ESX.GetPlayers(), {}

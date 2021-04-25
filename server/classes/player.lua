@@ -104,7 +104,19 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, weight, job
 	end
 
 	self.getInventory = function(minimal)
-		return exports['linden_inventory']:getPlayerInventory(self, minimal)
+		if minimal then
+			local minimalInventory = {}
+
+			for k,v in ipairs(self.inventory) do
+				if v.count > 0 then
+					minimalInventory[v.name] = v.count
+				end
+			end
+
+			return minimalInventory
+		else
+			return self.inventory
+		end
 	end
 
 	self.getJob = function()
@@ -119,10 +131,22 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, weight, job
 		self.name = newName
 	end
 
+	self.setAccount = function(account)
+		for k,v in ipairs(self.accounts) do
+			if v.name == account.name then
+				self.accounts[k] = account
+			end
+		end
+	end
+  
+	self.getPlayerSlot = function(slot)
+		return exports['linden_inventory']:getPlayerSlot(self, slot)
+	end
+
 	self.setAccountMoney = function(accountName, money)
 		if money >= 0 then
 			local account = self.getAccount(accountName)
-
+  
 			if account then
 				local prevMoney = account.money
 				local newMoney = ESX.Math.Round(money)
@@ -132,11 +156,11 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, weight, job
 			end
 		end
 	end
-
+  
 	self.addAccountMoney = function(accountName, money)
 		if money > 0 then
 			local account = self.getAccount(accountName)
-
+  
 			if account then
 				local newMoney = account.money + ESX.Math.Round(money)
 				account.money = newMoney
@@ -149,7 +173,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, weight, job
 	self.removeAccountMoney = function(accountName, money)
 		if money > 0 then
 			local account = self.getAccount(accountName)
-
+  
 			if account then
 				local newMoney = account.money - ESX.Math.Round(money)
 				account.money = newMoney
@@ -157,6 +181,10 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, weight, job
 				self.triggerEvent('esx:setAccountMoney', account)
 			end
 		end
+	end
+
+	self.getInventory = function(minimal)
+		return exports['linden_inventory']:getPlayerInventory(self, minimal)
 	end
 
 	self.getInventoryItem = function(name, metadata)
@@ -178,11 +206,11 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, weight, job
 	self.getWeight = function()
 		return exports['linden_inventory']:getWeight(self)
 	end
-
+  
 	self.getMaxWeight = function()
 		return exports['linden_inventory']:getMaxWeight(self)
 	end
-
+  
 	self.canCarryItem = function(name, count)
 		return exports['linden_inventory']:canCarryItem(self, name, count)
 	end
@@ -229,7 +257,6 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, weight, job
 			print(('[es_extended] [^3WARNING^7] Ignoring invalid .setJob() usage for "%s"'):format(self.identifier))
 		end
 	end
-
 
 	self.showNotification = function(msg)
 		self.triggerEvent('esx:showNotification', msg)

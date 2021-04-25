@@ -1,16 +1,5 @@
 local isPaused, isDead, pickups = false, false, {}
 
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(0)
-
-		if NetworkIsPlayerActive(PlayerId()) then
-			TriggerServerEvent('esx:onPlayerJoined')
-			break
-		end
-	end
-end)
-
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(playerData)
 	ESX.PlayerLoaded = true
@@ -69,6 +58,7 @@ AddEventHandler('esx:playerLoaded', function(playerData)
 		TriggerServerEvent('esx:onPlayerSpawn')
 		TriggerEvent('esx:onPlayerSpawn')
 		TriggerEvent('playerSpawned') -- compatibility with old scripts, will be removed soon
+
 		Citizen.Wait(4000)
 		ShutdownLoadingScreen()
 		ShutdownLoadingScreenNui()
